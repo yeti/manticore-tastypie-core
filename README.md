@@ -1,4 +1,4 @@
 manticore-tastypie-utils
 ========================
 
-Reusable utility functions for working with tastypie
+Core functionality for using tastypie with manticore
