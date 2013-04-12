@@ -1,3 +1,5 @@
+from django.conf.urls import url
+from tastypie import http
 from tastypie.resources import ModelResource, Resource
 
 
@@ -51,3 +53,38 @@ class ManticoreResource(Resource):
             data['objects'] = data[self._meta.object_name]
             del data[self._meta.object_name]
         return data
+
+
+class PictureUploadResource(ManticoreModelResource):
+
+    def prepend_urls(self):
+        return [
+            url(r"^(?P<resource_name>%s)/upload_picture/(?P<pk>\w[\w/-]*)/$" % self._meta.resource_name, self.wrap_view('upload_picture'), name="api_upload_picture"),
+        ]
+
+    def upload_picture(self, request, **kwargs):
+        self.method_check(request, allowed=['post'])
+        self.is_authenticated(request)
+
+        try:
+            report = self._meta.queryset._clone().get(pk=kwargs['pk'])
+        except self._meta.object_class.DoesNotExist:
+            return http.HttpNotFound()
+
+        bundle = self.build_bundle(obj=report, request=request)
+
+        self.authorized_update_detail(None, bundle)
+
+        picture = request.FILES.get('picture', None)
+
+        if not picture:
+            return self.error_response(request, {"error": "No file called picture found"}, response_class=http.HttpBadRequest)
+
+        picture = request.FILES['picture']
+        bundle.obj.original_photo.save(picture.name, picture)
+        bundle.obj.save(update_fields=['original_photo'])
+
+        # bundle = self.build_bundle(obj=report, request=request)
+        bundle = self.full_dehydrate(bundle)
+
+        return self.create_response(request, bundle, response_class=http.HttpAccepted)
