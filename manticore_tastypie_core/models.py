@@ -1,5 +1,6 @@
 from django.db import models
 from manticore_django.manticore_django.models import CoreModel
+from manticore_tastypie_social.manticore_tastypie_social.models import FollowableModel
 
 __author__ = 'rudolphmutter'
 
@@ -14,3 +15,8 @@ class Location(CoreModel):
 
     def __unicode__(self):
         return u"%s" % self.name
+
+    def identifier(self):
+        return u"%s" % self.name
+
+FollowableModel.register(Location)
