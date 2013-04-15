@@ -38,8 +38,8 @@ class ToBareForeignKeyField(ToOneField):
 class BareGenericForeignKeyField(GenericForeignKeyField):
 
     def build_related_resource(self, value, request=None, related_obj=None, related_name=None):
-        if not isinstance(value, int):
-            raise ApiFieldError("The '%s' field was given non-integer data: %s." % (self.instance_name, value))
+        if not isinstance(value, int) and not isinstance(value, basestring):
+            raise ApiFieldError("The '%s' field was given non-integer and non-string data: %s." % (self.instance_name, value))
 
         #TODO: Dynamically pull api path)
         value = "/api/v1/%s/%s/" % (self.to.itervalues().next().Meta.resource_name, value)
