@@ -107,7 +107,7 @@ class GooglePlace(object):
 class GooglePlaceResource(ManticoreResource):
     id = fields.CharField(attribute='id')
     name = fields.CharField(attribute='name')
-    address = fields.CharField(attribute='formatted_address', null=True)
+    address = fields.CharField(attribute='vicinity', null=True)
     latitude = fields.FloatField()
     longitude = fields.FloatField()
 
@@ -153,9 +153,6 @@ class GooglePlaceResource(ManticoreResource):
             query = self._client().text_search(query=query_name, radius=None)
         else:
             query = self._client().nearby_search(sensor=True, lat_lng=lat_lng, radius=8000)
-
-        for result in query.places:
-            result.get_details()
 
         return query.places
 
