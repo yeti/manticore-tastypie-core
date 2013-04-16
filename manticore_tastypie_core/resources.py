@@ -1,5 +1,6 @@
 from django.conf import settings
 from django.conf.urls import url
+from django.db import IntegrityError
 from googleplaces import GooglePlaces, ranking
 from tastypie import http, fields
 from tastypie.authorization import Authorization
@@ -45,6 +46,15 @@ class ManticoreModelResource(BaseModelResource):
             data['objects'] = data[self._meta.object_name]
             del data[self._meta.object_name]
         return data
+
+    def obj_create(self, bundle, **kwargs):
+        try:
+            return super(ManticoreModelResource, self).obj_create(bundle, **kwargs)
+        except IntegrityError, e:
+            if 'duplicate key' in e.message:
+                raise BadRequest("This object already exists and would violate a unique key constraint")
+            else:
+                raise e
 
 
 class ManticoreResource(Resource):

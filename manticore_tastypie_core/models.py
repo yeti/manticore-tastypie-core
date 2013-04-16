@@ -21,6 +21,9 @@ class Location(CoreModel):
         return u"%s" % self.name
 
     def identifier(self):
-        return u"%s" % self.name
+        if not self.name or self.name == '':
+            return u"%s" % self.city
+        else:
+            return u"%s" % self.name
 
 FollowableModel.register(Location)
