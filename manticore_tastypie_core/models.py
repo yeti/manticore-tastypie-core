@@ -12,7 +12,7 @@ class Location(CoreModel):
     latitude = models.FloatField()
     longitude = models.FloatField()
     neighborhood = models.CharField(max_length=125, default='', db_index=True)
-    city = models.CharField(max_length=100, db_index=True)
+    city = models.CharField(max_length=100, db_index=True, default='')
     state = models.CharField(max_length=30, db_index=True, default='')
     zipcode = models.CharField(max_length=10, db_index=True, default='')
     country_code = models.CharField(max_length=10, db_index=True)
