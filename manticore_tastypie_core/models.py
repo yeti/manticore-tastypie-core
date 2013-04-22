@@ -5,17 +5,20 @@ from manticore_tastypie_social.manticore_tastypie_social.models import Followabl
 __author__ = 'rudolphmutter'
 
 
+# Postgres doesn't include nulls in unique constraints, entering empty strings for default to protect duplicate locations
 class Location(CoreModel):
-    # Google Place unique ID
-    id = models.CharField(max_length=250, primary_key=True)
-    name = models.CharField(max_length=125, null=True, blank=True)
-    address = models.CharField(max_length=125, null=True, blank=True)
+    name = models.CharField(max_length=125, default='')
+    address = models.CharField(max_length=200, default='')
     latitude = models.FloatField()
     longitude = models.FloatField()
-    city = models.CharField(max_length=50)
-    state = models.CharField(max_length=30, null=True, blank=True)
-    zipcode = models.CharField(max_length=10, null=True, blank=True)
-    country = models.CharField(max_length=40)
+    neighborhood = models.CharField(max_length=125, default='', db_index=True)
+    city = models.CharField(max_length=100, db_index=True)
+    state = models.CharField(max_length=30, db_index=True, default='')
+    zipcode = models.CharField(max_length=10, db_index=True, default='')
+    country_code = models.CharField(max_length=10, db_index=True)
+
+    class Meta:
+        unique_together = [('name', 'neighborhood', 'city', 'state', 'country_code', 'zipcode')]
 
     def __unicode__(self):
         return u"%s" % self.name
