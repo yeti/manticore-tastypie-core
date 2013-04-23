@@ -7,6 +7,8 @@ __author__ = 'rudolphmutter'
 
 # Postgres doesn't include nulls in unique constraints, entering empty strings for default to protect duplicate locations
 class Location(CoreModel):
+    FIELDS_TO_FILTER = ['name', 'neighborhood', 'city', 'state', 'country_code']
+
     name = models.CharField(max_length=125, default='')
     address = models.CharField(max_length=200, default='')
     latitude = models.FloatField()
@@ -28,5 +30,14 @@ class Location(CoreModel):
             return u"%s" % self.city
         else:
             return u"%s" % self.name
+
+    # Take available fields on the location object and turn them into filters
+    def containing_filters(self):
+        filters = {}
+        for FIELD in self.FIELDS_TO_FILTER:
+            value = getattr(self, FIELD)
+            if value and value != '':
+                filters["location__%s" % FIELD] = value
+        return filters
 
 FollowableModel.register(Location)
