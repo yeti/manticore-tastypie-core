@@ -183,3 +183,11 @@ class LocationResource(ManticoreModelResource):
         authentication = ExpireApiKeyAuthentication()
         resource_name = "location"
         object_name = "location"
+        filtering = {
+            'id': ['exact'],
+            'name': ['exact'],
+            'neighborhood': ['exact'],
+            'city': ['exact'],
+            'state': ['exact'],
+            'country_code': ['exact'],
+        }
