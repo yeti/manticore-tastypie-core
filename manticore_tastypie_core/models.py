@@ -10,7 +10,6 @@ class Location(CoreModel):
     FIELDS_TO_FILTER = ['name', 'neighborhood', 'city', 'state', 'country_code']
 
     name = models.CharField(max_length=125, default='')
-    address = models.CharField(max_length=200, default='')
     latitude = models.FloatField()
     longitude = models.FloatField()
     neighborhood = models.CharField(max_length=125, default='', db_index=True)
