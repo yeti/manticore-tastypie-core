@@ -39,4 +39,8 @@ class Location(CoreModel):
                 filters["location__%s" % FIELD] = value
         return filters
 
+    def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
+        self.country_code = self.country_code.upper()
+        super(Location, self).save(force_insert, force_update, using, update_fields)
+
 FollowableModel.register(Location)
