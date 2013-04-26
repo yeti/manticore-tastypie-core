@@ -189,5 +189,5 @@ class LocationResource(ManticoreModelResource):
             'neighborhood': ['exact'],
             'city': ['exact'],
             'state': ['exact'],
-            'country_code': ['exact'],
+            'country_code': ['exact', 'iexact'],
         }
