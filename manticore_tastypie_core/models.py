@@ -25,10 +25,18 @@ class Location(CoreModel):
         return u"%s" % self.name
 
     def identifier(self):
-        if not self.name or self.name == '':
-            return u"%s" % self.city
+        if self.name != '':
+            identity = self.name
+        elif self.neighborhood != '':
+            identity = self.neighborhood
+        elif self.city != '':
+            identity = self.city
+        elif self.state != '':
+            identity = self.state
         else:
-            return u"%s" % self.name
+            identity = self.country_code
+
+        return u"%s" % identity
 
     # Take available fields on the location object and turn them into filters
     def containing_filters(self):
