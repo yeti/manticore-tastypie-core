@@ -38,6 +38,9 @@ class Location(CoreModel):
 
         return u"%s" % identity
 
+    def type(self):
+        return u"location"
+
     # Take available fields on the location object and turn them into filters
     def containing_filters(self):
         filters = {}
