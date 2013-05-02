@@ -72,11 +72,12 @@ class ManticoreResource(Resource):
         return data
 
 
-class PictureUploadResource(ManticoreModelResource):
+class PictureVideoUploadResource(ManticoreModelResource):
 
     def prepend_urls(self):
         return [
             url(r"^(?P<resource_name>%s)/upload_picture/(?P<pk>\w[\w/-]*)/$" % self._meta.resource_name, self.wrap_view('upload_picture'), name="api_upload_picture"),
+            url(r"^(?P<resource_name>%s)/upload_video/(?P<pk>\w[\w/-]*)/$" % self._meta.resource_name, self.wrap_view('upload_video'), name="api_upload_video"),
         ]
 
     def upload_picture(self, request, **kwargs):
@@ -93,7 +94,6 @@ class PictureUploadResource(ManticoreModelResource):
         self.authorized_update_detail(None, bundle)
 
         picture = request.FILES.get('picture', None)
-
         if not picture:
             return self.error_response(request, {"error": "No file called picture found"}, response_class=http.HttpBadRequest)
 
@@ -101,9 +101,36 @@ class PictureUploadResource(ManticoreModelResource):
         bundle.obj.original_photo.save(picture.name, picture)
         bundle.obj.save(update_fields=['original_photo'])
 
-        # bundle = self.build_bundle(obj=report, request=request)
         bundle = self.full_dehydrate(bundle)
 
+        return self.create_response(request, bundle, response_class=http.HttpAccepted)
+
+    def upload_video(self, request, **kwargs):
+        self.method_check(request, allowed=['post'])
+        self.is_authenticated(request)
+
+        try:
+            report = self._meta.queryset._clone().get(pk=kwargs['pk'])
+        except self._meta.object_class.DoesNotExist:
+            return http.HttpNotFound()
+
+        bundle = self.build_bundle(obj=report, request=request)
+
+        self.authorized_update_detail(None, bundle)
+
+        video = request.FILES.get('video', None)
+        if not video:
+            return self.error_response(request, {"error": "No file called video found"}, response_class=http.HttpBadRequest)
+
+        video_thumbnail = request.FILES.get('video_thumbnail', None)
+        if not video_thumbnail:
+            return self.error_response(request, {"error": "No file called video_thumbnail found"}, response_class=http.HttpBadRequest)
+
+        bundle.obj.video.save(video.name, video)
+        bundle.obj.video_thumbnail.save(video_thumbnail.name, video_thumbnail)
+        bundle.obj.save(update_fields=['video', 'video_thumbnail'])
+
+        bundle = self.full_dehydrate(bundle)
         return self.create_response(request, bundle, response_class=http.HttpAccepted)
 
 
