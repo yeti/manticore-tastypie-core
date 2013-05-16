@@ -3,6 +3,7 @@ from django.conf.urls import url
 from django.db import IntegrityError
 from googleplaces import GooglePlaces, ranking
 from tastypie import http, fields
+from tastypie.authentication import Authentication
 from tastypie.authorization import Authorization
 from tastypie.bundle import Bundle
 from tastypie.exceptions import BadRequest
@@ -233,7 +234,7 @@ class VersionResource(ManticoreResource):
         allowed_methods = ['get']
         object_class = Version
         authorization = Authorization()
-        authentication = ExpireApiKeyAuthentication()
+        authentication = Authentication()
         object_name = "version"
 
     def detail_uri_kwargs(self, bundle_or_obj):
