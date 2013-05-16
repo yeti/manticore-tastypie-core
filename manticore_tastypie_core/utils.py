@@ -1,5 +1,5 @@
 import math
-from manticore_tastypie_core.manticore_tastypie_core.resources import GooglePlaceResource, LocationResource
+from manticore_tastypie_core.manticore_tastypie_core.resources import GooglePlaceResource, LocationResource, VersionResource
 
 __author__ = 'rudolphmutter'
 
@@ -8,6 +8,7 @@ __author__ = 'rudolphmutter'
 def register_api(api):
     api.register(GooglePlaceResource())
     api.register(LocationResource())
+    api.register(VersionResource())
     return api
 
 

@@ -218,3 +218,36 @@ class LocationResource(ManticoreModelResource):
             'state': ['exact'],
             'country_code': ['exact', 'iexact'],
         }
+
+
+class Version(object):
+    def __init__(self, identifier=None):
+        self.identifier = identifier
+
+
+class VersionResource(ManticoreResource):
+    identifier = fields.CharField(attribute='identifier')
+
+    class Meta:
+        resource_name = 'version'
+        allowed_methods = ['get']
+        object_class = Version
+        authorization = Authorization()
+        authentication = ExpireApiKeyAuthentication()
+        object_name = "version"
+
+    def detail_uri_kwargs(self, bundle_or_obj):
+        kwargs = {}
+
+        if isinstance(bundle_or_obj, Bundle):
+            kwargs['pk'] = bundle_or_obj.obj.identifier
+        else:
+            kwargs['pk'] = bundle_or_obj['identifier']
+
+        return kwargs
+
+    def get_object_list(self, bundle, **kwargs):
+        return [Version(identifier=settings.VERSION)]
+
+    def obj_get_list(self, bundle, **kwargs):
+        return self.get_object_list(bundle, **kwargs)
