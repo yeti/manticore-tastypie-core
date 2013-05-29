@@ -50,6 +50,20 @@ class Location(CoreModel):
                 filters["location__%s" % FIELD] = value
         return filters
 
+    def description(self):
+        location = []
+        if self.name != '':
+            location.append(self.name)
+        if self.neighborhood != '':
+            location.append(self.neighborhood)
+        if self.city != '':
+            location.append(self.city)
+        if self.state != '':
+            location.append(self.state)
+        if self.country_code != '':
+            location.append(self.country_code)
+        return ", ".join(location)
+
     def save(self, force_insert=False, force_update=False, using=None, update_fields=None):
         self.country_code = self.country_code.upper()
         super(Location, self).save(force_insert, force_update, using, update_fields)
