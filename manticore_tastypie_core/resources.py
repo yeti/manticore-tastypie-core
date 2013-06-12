@@ -1,3 +1,4 @@
+from _ssl import SSLError
 from django.conf import settings
 from django.conf.urls import url
 from django.db import IntegrityError
@@ -99,8 +100,20 @@ class PictureVideoUploadResource(ManticoreModelResource):
             return self.error_response(request, {"error": "No file called picture found"}, response_class=http.HttpBadRequest)
 
         picture = request.FILES['picture']
-        bundle.obj.original_photo.save(picture.name, picture)
-        bundle.obj.save(update_fields=['original_photo'])
+
+        done, tries = False, 0
+        while not done:
+            try:
+                bundle.obj.original_photo.save(picture.name, picture)
+                bundle.obj.save(update_fields=['original_photo'])
+                done = True
+            except SSLError:
+                pass
+
+            # Try at max, 10 times before quitting
+            tries += 1
+            if tries > 10:
+                done = True
 
         bundle = self.full_dehydrate(bundle)
 
@@ -127,9 +140,20 @@ class PictureVideoUploadResource(ManticoreModelResource):
         if not video_thumbnail:
             return self.error_response(request, {"error": "No file called video_thumbnail found"}, response_class=http.HttpBadRequest)
 
-        bundle.obj.video.save(video.name, video)
-        bundle.obj.video_thumbnail.save(video_thumbnail.name, video_thumbnail)
-        bundle.obj.save(update_fields=['video', 'video_thumbnail'])
+        done, tries = False, 0
+        while not done:
+            try:
+                bundle.obj.video.save(video.name, video)
+                bundle.obj.video_thumbnail.save(video_thumbnail.name, video_thumbnail)
+                bundle.obj.save(update_fields=['video', 'video_thumbnail'])
+                done = True
+            except SSLError:
+                pass
+
+            # Try at max, 10 times before quitting
+            tries += 1
+            if tries > 10:
+                done = True
 
         bundle = self.full_dehydrate(bundle)
         return self.create_response(request, bundle, response_class=http.HttpAccepted)
