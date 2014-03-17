@@ -5,6 +5,12 @@ from tastypie.fields import ToOneField
 
 # Receives and Outputs ints representing primary keys of the field.
 class ToBareForeignKeyField(ToOneField):
+    """
+    This Tastypie Field is an abstraction on the ToOneField, which allows someone to pass just the ID for
+    this field, which will in the overwritten method be converted into the proper resource_uri for the related object.
+
+    It will also pass back in JSON, just the ID for this related object instead of the resource_uri or the full object.
+    """
 
     def build_related_resource(self, value, request=None, related_obj=None, related_name=None):
         if not isinstance(value, int):
@@ -17,7 +23,8 @@ class ToBareForeignKeyField(ToOneField):
 
         return super(ToBareForeignKeyField, self).build_related_resource(value, request, related_obj, related_name)
 
-    def dehydrate(self, bundle):
+    def dehydrate(self, bundle, for_list=True):
+        """This method returns just the ID for the related object instead of the resource_uri or the full object."""
         field_id_name = "%s_id" % self.attribute
 
         if hasattr(bundle.obj, field_id_name):
@@ -34,8 +41,12 @@ class ToBareForeignKeyField(ToOneField):
             raise ApiFieldError("The model '%r' doesn't have an id for attribute '%s'" % (bundle.obj, self.attribute))
 
 
-# Expects there to be only one model and resource pair in the generic foreign key
 class BareGenericForeignKeyField(GenericForeignKeyField):
+    """
+    This Tastypie Field is an abstraction on the GenericForeignkeyField, which allows someone to pass just the ID for
+    this field, which will in the overwritten method be converted into the proper resource_uri. It assumes that there
+    is only 1 type of object that can be fulfilled by this GenericForeignkey.
+    """
 
     def build_related_resource(self, value, request=None, related_obj=None, related_name=None):
         if not isinstance(value, int) and not isinstance(value, basestring):
