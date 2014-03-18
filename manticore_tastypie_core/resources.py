@@ -87,11 +87,11 @@ class PictureVideoUploadResource(ManticoreModelResource):
         self.is_authenticated(request)
 
         try:
-            report = self._meta.queryset._clone().get(pk=kwargs['pk'])
+            obj = self._meta.queryset._clone().get(pk=kwargs['pk'])
         except self._meta.object_class.DoesNotExist:
             return http.HttpNotFound()
 
-        bundle = self.build_bundle(obj=report, request=request)
+        bundle = self.build_bundle(obj=obj, request=request)
 
         self.authorized_update_detail(None, bundle)
 
@@ -124,11 +124,11 @@ class PictureVideoUploadResource(ManticoreModelResource):
         self.is_authenticated(request)
 
         try:
-            report = self._meta.queryset._clone().get(pk=kwargs['pk'])
+            obj = self._meta.queryset._clone().get(pk=kwargs['pk'])
         except self._meta.object_class.DoesNotExist:
             return http.HttpNotFound()
 
-        bundle = self.build_bundle(obj=report, request=request)
+        bundle = self.build_bundle(obj=obj, request=request)
 
         self.authorized_update_detail(None, bundle)
 
