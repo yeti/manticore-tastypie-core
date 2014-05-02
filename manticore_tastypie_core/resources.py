@@ -9,6 +9,7 @@ from tastypie.authorization import Authorization
 from tastypie.bundle import Bundle
 from tastypie.exceptions import BadRequest
 from tastypie.resources import ModelResource, Resource
+from manticore_django.manticore_django.utils import retry_cloudfiles
 from manticore_tastypie_core.manticore_tastypie_core.models import Location
 from manticore_tastypie_user.manticore_tastypie_user.authentication import ExpireApiKeyAuthentication
 
@@ -99,21 +100,11 @@ class PictureVideoUploadResource(ManticoreModelResource):
         if not picture:
             return self.error_response(request, {"error": "No file called picture found"}, response_class=http.HttpBadRequest)
 
-        picture = request.FILES['picture']
+        def save_image(obj, picture):
+            obj.original_photo.save(picture.name, picture)
+            obj.save(update_fields=['original_photo'])
 
-        done, tries = False, 0
-        while not done:
-            try:
-                bundle.obj.original_photo.save(picture.name, picture)
-                bundle.obj.save(update_fields=['original_photo'])
-                done = True
-            except SSLError:
-                pass
-
-            # Try at max, 10 times before quitting
-            tries += 1
-            if tries > 10:
-                done = True
+        retry_cloudfiles(save_image, bundle.obj, request.FILES['picture'])
 
         bundle = self.full_dehydrate(bundle)
 
@@ -140,20 +131,12 @@ class PictureVideoUploadResource(ManticoreModelResource):
         if not video_thumbnail:
             return self.error_response(request, {"error": "No file called video_thumbnail found"}, response_class=http.HttpBadRequest)
 
-        done, tries = False, 0
-        while not done:
-            try:
-                bundle.obj.video.save(video.name, video)
-                bundle.obj.video_thumbnail.save(video_thumbnail.name, video_thumbnail)
-                bundle.obj.save(update_fields=['video', 'video_thumbnail'])
-                done = True
-            except SSLError:
-                pass
+        def save_image(obj, video):
+            obj.video.save(video.name, video)
+            obj.video_thumbnail.save(video_thumbnail.name, video_thumbnail)
+            obj.save(update_fields=['video', 'video_thumbnail'])
 
-            # Try at max, 10 times before quitting
-            tries += 1
-            if tries > 10:
-                done = True
+        retry_cloudfiles(save_image, bundle.obj, video)
 
         bundle = self.full_dehydrate(bundle)
         return self.create_response(request, bundle, response_class=http.HttpAccepted)
