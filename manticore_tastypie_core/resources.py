@@ -108,7 +108,11 @@ class PictureVideoUploadResource(ManticoreModelResource):
 
         bundle = self.full_dehydrate(bundle)
 
-        return self.create_response(request, bundle, response_class=http.HttpAccepted)
+        def return_response(resource, request, bundle):
+            return resource.create_response(request, bundle, response_class=http.HttpAccepted)
+
+        # Retry cloudfiles in case we get a 404 because the photos haven't finished uploading yet
+        return retry_cloudfiles(return_response, self, request, bundle)
 
     def upload_video(self, request, **kwargs):
         self.method_check(request, allowed=['post'])
@@ -131,15 +135,20 @@ class PictureVideoUploadResource(ManticoreModelResource):
         if not video_thumbnail:
             return self.error_response(request, {"error": "No file called video_thumbnail found"}, response_class=http.HttpBadRequest)
 
-        def save_image(obj, video):
+        def save_video(obj, video):
             obj.video.save(video.name, video)
             obj.video_thumbnail.save(video_thumbnail.name, video_thumbnail)
             obj.save(update_fields=['video', 'video_thumbnail'])
 
-        retry_cloudfiles(save_image, bundle.obj, video)
+        retry_cloudfiles(save_video, bundle.obj, video)
 
         bundle = self.full_dehydrate(bundle)
-        return self.create_response(request, bundle, response_class=http.HttpAccepted)
+
+        def return_response(resource, request, bundle):
+            return resource.create_response(request, bundle, response_class=http.HttpAccepted)
+
+        # Retry cloudfiles in case we get a 404 because the videos haven't finished uploading yet
+        return retry_cloudfiles(return_response, self, request, bundle)
 
 
 class GooglePlace(object):
