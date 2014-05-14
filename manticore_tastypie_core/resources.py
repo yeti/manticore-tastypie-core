@@ -2,6 +2,7 @@ from _ssl import SSLError
 from django.conf import settings
 from django.conf.urls import url
 from django.db import IntegrityError
+from django.db.models import FieldDoesNotExist
 from googleplaces import GooglePlaces, ranking
 from tastypie import http, fields
 from tastypie.authentication import Authentication
@@ -58,6 +59,21 @@ class ManticoreModelResource(BaseModelResource):
                 raise BadRequest("This object already exists and would violate a unique key constraint")
             else:
                 raise e
+
+    def update_in_place(self, request, original_bundle, new_data):
+        """
+            Set all FileFields to their relative path instead of their full url.
+            This avoids trying to save their full url back to the database.
+        """
+        for field_name, value in original_bundle.data.iteritems():
+            try:
+                field_type = original_bundle.obj._meta.get_field(field_name).get_internal_type()
+                if field_type == 'FileField':
+                    original_bundle.data[field_name] = getattr(original_bundle.obj, field_name)
+            except FieldDoesNotExist:
+                pass
+
+        super(ManticoreModelResource, self).update_in_place(request, original_bundle, new_data)
 
 
 class ManticoreResource(Resource):
