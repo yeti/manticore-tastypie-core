@@ -12,6 +12,9 @@ from manticore_django.manticore_django.utils import retry_cloudfiles
 
 
 class BaseModelResource(ModelResource):
+    """
+    Upgrade to tastypie's ModelResouce class. Makes it possible not to ignore 'blank' attributes.
+    """
     @classmethod
     def get_fields(cls, fields=None, excludes=None):
         """
@@ -36,12 +39,19 @@ class BaseModelResource(ModelResource):
 class ManticoreModelResource(BaseModelResource):
 
     def alter_list_data_to_serialize(self, request, data):
+        """
+        Replaces the key "Objects" in the dictionary that is about to be serialized,
+         to a more understandable key : "object_name", more suggestive for the receivers.
+        """
         if hasattr(self._meta, 'object_name'):
             data[self._meta.object_name] = data['objects']
             del data['objects']
         return data
 
     def alter_deserialized_list_data(self, request, data):
+        """
+        Replaces the key "object_name" in the received dictionary to "objects", convertible to a python object.
+        """
         if hasattr(self._meta, 'object_name'):
             data['objects'] = data[self._meta.object_name]
             del data[self._meta.object_name]
@@ -75,12 +85,19 @@ class ManticoreModelResource(BaseModelResource):
 class ManticoreResource(Resource):
 
     def alter_list_data_to_serialize(self, request, data):
+        """
+        Replaces the key "Objects" in the dictionary that is about to be serialized,
+         to a more understandable key : "object_name", more suggestive for the receivers.
+        """
         if hasattr(self._meta, 'object_name'):
             data[self._meta.object_name] = data['objects']
             del data['objects']
         return data
 
     def alter_deserialized_list_data(self, request, data):
+        """
+        Replaces the key "object_name" in the received dictionary to "objects", convertible to a python object.
+        """
         if hasattr(self._meta, 'object_name'):
             data['objects'] = data[self._meta.object_name]
             del data[self._meta.object_name]
