@@ -56,6 +56,18 @@ class ManticoreModelResource(BaseModelResource):
             else:
                 raise e
 
+    def full_dehydrate(self, bundle, for_list=False):
+        """
+            Note: Patched for https://github.com/toastdriven/django-tastypie/pull/615
+
+            Clears out extra fields not related to the object being return from a POST/PUT/PATCH
+            when always_return_data is set to True
+        """
+
+        bundle.data = {}
+        return super(ManticoreModelResource, self).full_dehydrate(bundle, for_list)
+
+
     def update_in_place(self, request, original_bundle, new_data):
         """
             Set all FileFields to their relative path instead of their full url.
