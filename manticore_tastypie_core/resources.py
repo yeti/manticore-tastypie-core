@@ -67,7 +67,6 @@ class ManticoreModelResource(BaseModelResource):
         bundle.data = {}
         return super(ManticoreModelResource, self).full_dehydrate(bundle, for_list)
 
-
     def update_in_place(self, request, original_bundle, new_data):
         """
             Set all FileFields to their relative path instead of their full url.
