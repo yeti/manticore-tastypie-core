@@ -20,6 +20,41 @@ class ManticomResourceTestCase(ResourceTestCase):
         api_key, created = ApiKey.objects.get_or_create(user=user)
         return self.create_apikey(user.email, api_key.key)
 
+    def check_schema_keys(self, data_object, schema_fields):
+        self.assertKeys(data_object, schema_fields)
+
+        for schema_field, schema_type in schema_fields.iteritems():
+            # If this field is actually another related object, then check that object's fields as well
+            schema_parts = schema_type.split(',')
+            is_list = False
+            is_optional = False
+            new_schema_object = None
+            for part in schema_parts:
+                # Parse through all parts, regardless of ordering
+                if part == "array":
+                    is_list = True
+                elif part == "optional":
+                    is_optional = True
+                elif part.startswith('$'):
+                    new_schema_object = part
+
+            if new_schema_object:
+                new_data_object = data_object[schema_field]
+                if new_data_object is None:
+                    # If our new object to check is None and optional then continue, else raise an error
+                    if is_optional:
+                        continue
+                    else:
+                        raise self.failureException("No data for object {0}".format(new_schema_object))
+                elif is_list:
+                    # If our new object to check is a list of these objects, continue if we don't have any daa
+                    # Else grab the first one in the list
+                    if len(new_data_object) == 0:
+                        continue
+                    new_data_object = new_data_object[0]
+
+                self.check_schema_keys(new_data_object, self.schema_objects[new_schema_object])
+
     def assertManticomGETResponse(self, url, key_path, response_object_name, user, **kwargs):
         """
             Takes a url, key path, and object name to run a GET request and
@@ -32,7 +67,8 @@ class ManticomResourceTestCase(ResourceTestCase):
         data = self.deserialize(response)[key_path]
         if len(data) == 0:
             raise self.failureException("No data to compare response")
-        self.assertKeys(data[0], self.schema_objects[response_object_name])
+
+        self.check_schema_keys(data[0], self.schema_objects[response_object_name])
 
     def assertManticomPOSTResponse(self, url, request_object_name, response_object_name, data, user, key_path=None):
         """
