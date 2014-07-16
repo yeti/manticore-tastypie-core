@@ -20,13 +20,13 @@ class ManticomResourceTestCase(ResourceTestCase):
         api_key, created = ApiKey.objects.get_or_create(user=user)
         return self.create_apikey(user.email, api_key.key)
 
-    def assertManticomGETResponse(self, url, key_path, response_object_name, user):
+    def assertManticomGETResponse(self, url, key_path, response_object_name, user, **kwargs):
         """
             Takes a url, key path, and object name to run a GET request and
             check the results match the manticom schema
         """
         response = self.api_client.get("{}{}/".format(settings.API_PREFIX, url),
-                                       authentication=self.get_authentication(user))
+                                       authentication=self.get_authentication(user), **kwargs)
         self.assertValidJSONResponse(response)
 
         data = self.deserialize(response)[key_path]
@@ -34,7 +34,7 @@ class ManticomResourceTestCase(ResourceTestCase):
             raise self.failureException("No data to compare response")
         self.assertKeys(data[0], self.schema_objects[response_object_name])
 
-    def assertManticomPOSTResponse(self, url, request_object_name, response_object_name, data, user):
+    def assertManticomPOSTResponse(self, url, request_object_name, response_object_name, data, user, key_path=None):
         """
             Takes a url, key path, and object name to run a GET request and
             check the results match the manticom schema
@@ -48,4 +48,10 @@ class ManticomResourceTestCase(ResourceTestCase):
         self.assertValidJSON(force_text(response.content))
 
         data = self.deserialize(response)
-        self.assertKeys(data, self.schema_objects[response_object_name])
+        if 'meta' in data:  # If the POST returns a tastypie list, process looking for the first item
+            data = data[key_path]
+            if len(data) == 0:
+                raise self.failureException("No data to compare response")
+            self.assertKeys(data[0], self.schema_objects[response_object_name])
+        else:
+            self.assertKeys(data, self.schema_objects[response_object_name])
