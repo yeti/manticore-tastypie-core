@@ -72,12 +72,10 @@ class ManticomResourceTestCase(ResourceTestCase):
 
     def assertManticomPOSTResponse(self, url, request_object_name, response_object_name, data, user, key_path=None):
         """
-            Takes a url, key path, and object name to run a GET request and
-            check the results match the manticom schema
+            Runs a POST request and checks the POST data and results match the manticom schema
         """
         self.assertKeys(data, self.schema_objects[request_object_name])
-        response = self.api_client.post("{}{}/".format(settings.API_PREFIX, url),
-                                        data=data,
+        response = self.api_client.post("{}{}/".format(settings.API_PREFIX, url), data=data,
                                         authentication=self.get_authentication(user))
         self.assertHttpCreated(response)
         self.assertTrue(response['Content-Type'].startswith('application/json'))
@@ -91,3 +89,17 @@ class ManticomResourceTestCase(ResourceTestCase):
             self.assertKeys(data[0], self.schema_objects[response_object_name])
         else:
             self.assertKeys(data, self.schema_objects[response_object_name])
+
+    def assertManticomPATCHResponse(self, url, request_object_name, response_object_name, data, user, **kwargs):
+        """
+            Runs a PATCH request and checks the PATCH data and results match the manticom schema
+        """
+        self.assertKeys(data, self.schema_objects[request_object_name])
+        response = self.api_client.patch("{}{}/".format(settings.API_PREFIX, url), data=data,
+                                         authentication=self.get_authentication(user), **kwargs)
+        self.assertHttpAccepted(response)
+        self.assertTrue(response['Content-Type'].startswith('application/json'))
+        self.assertValidJSON(force_text(response.content))
+
+        data = self.deserialize(response)
+        self.assertKeys(data, self.schema_objects[response_object_name])
