@@ -21,7 +21,7 @@ class ManticomResourceTestCase(ResourceTestCase):
         return self.create_apikey(user.email, api_key.key)
 
     def check_schema_keys(self, data_object, schema_fields):
-        self.assertKeys(data_object, schema_fields)
+        # self.assertKeys(data_object, schema_fields)
 
         for schema_field, schema_type in schema_fields.iteritems():
             # If this field is actually another related object, then check that object's fields as well
@@ -94,7 +94,7 @@ class ManticomResourceTestCase(ResourceTestCase):
         """
             Runs a PATCH request and checks the PATCH data and results match the manticom schema
         """
-        self.assertKeys(data, self.schema_objects[request_object_name])
+        self.check_schema_keys(data, self.schema_objects[request_object_name])
         response = self.api_client.patch("{}{}/".format(settings.API_PREFIX, url), data=data,
                                          authentication=self.get_authentication(user), **kwargs)
         self.assertHttpAccepted(response)
