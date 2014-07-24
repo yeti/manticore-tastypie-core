@@ -1,4 +1,6 @@
+from PIL import Image
 from django.conf import settings
+from django.core.files.images import get_image_dimensions
 from django.utils.encoding import force_text
 import json
 from tastypie.models import ApiKey
@@ -116,3 +118,34 @@ class ManticomResourceTestCase(ResourceTestCase):
 
         data = self.deserialize(response)
         self.assertKeys(data, self.schema_objects[response_object_name])
+
+    def assertPhotoUpload(self, url, obj_to_update, user, path_to_image):
+        """
+            Checks that the photo is uploaded, saved, and resized
+        """
+        kwargs = {
+            'HTTP_AUTHORIZATION': self.get_authentication(user),
+            'data': {'picture': open(settings.PROJECT_ROOT + path_to_image, 'r')}
+        }
+        response = self.api_client.client.post("{}{}/upload_picture/{}/".format(settings.API_PREFIX,
+                                                url,
+                                                obj_to_update.pk),
+                                               **kwargs
+        )
+
+        self.assertHttpAccepted(response)
+        self.assertTrue(response['Content-Type'].startswith('application/json'))
+        self.assertValidJSON(force_text(response.content))
+
+        # Check the photo is saved
+        obj_to_update = obj_to_update.__class__.objects.get(pk=obj_to_update.pk)
+        self.assertEqual(
+            obj_to_update.original_photo.file.read(),
+            open(settings.PROJECT_ROOT + path_to_image, 'r').read()
+        )
+
+        # Check the photo is correctly resized
+        for size_field, size in obj_to_update.__class__.SIZES.iteritems():
+            w, h = get_image_dimensions(getattr(obj_to_update, size_field))
+            self.assertEqual(size['height'], h)
+            self.assertEqual(size['width'], w)
