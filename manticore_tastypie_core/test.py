@@ -21,7 +21,11 @@ class ManticomResourceTestCase(ResourceTestCase):
         return self.create_apikey(user.email, api_key.key)
 
     def check_schema_keys(self, data_object, schema_fields):
-        # self.assertKeys(data_object, schema_fields)
+        """
+            `data_object` is the actual JSON being sent or received
+            `schema_fields` is the expected JSON based on the schema file
+        """
+        required_fields = []
 
         for schema_field, schema_type in schema_fields.iteritems():
             # If this field is actually another related object, then check that object's fields as well
@@ -37,6 +41,9 @@ class ManticomResourceTestCase(ResourceTestCase):
                     is_optional = True
                 elif part.startswith('$'):
                     new_schema_object = part
+
+            if not is_optional:
+                required_fields.append(schema_field)
 
             if new_schema_object:
                 new_data_object = data_object[schema_field]
@@ -54,6 +61,12 @@ class ManticomResourceTestCase(ResourceTestCase):
                     new_data_object = new_data_object[0]
 
                 self.check_schema_keys(new_data_object, self.schema_objects[new_schema_object])
+
+        # The actual `data_object` contains every required field
+        self.assertTrue(set(required_fields).issubset(set(data_object)))
+
+        # The actual `data_object` contains no extraneous fields not found in the schema
+        self.assertTrue(set(data_object).issubset(set(schema_fields)))
 
     def assertManticomGETResponse(self, url, key_path, response_object_name, user, **kwargs):
         """
