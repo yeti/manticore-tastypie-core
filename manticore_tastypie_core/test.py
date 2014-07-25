@@ -85,13 +85,24 @@ class ManticomResourceTestCase(ResourceTestCase):
 
         self.check_schema_keys(data[0], self.schema_objects[response_object_name])
 
-    def assertManticomPOSTResponse(self, url, request_object_name, response_object_name, data, user, key_path=None):
+    def assertManticomPOSTResponse(
+            self,
+            url,
+            request_object_name,
+            response_object_name,
+            data,
+            user,
+            key_path=None,
+            extra_http=None
+    ):
         """
             Runs a POST request and checks the POST data and results match the manticom schema
         """
-        self.assertKeys(data, self.schema_objects[request_object_name])
+        self.check_schema_keys(data, self.schema_objects[request_object_name])
+        if extra_http is None:
+            extra_http = {}
         response = self.api_client.post("{}{}/".format(settings.API_PREFIX, url), data=data,
-                                        authentication=self.get_authentication(user))
+                                        authentication=self.get_authentication(user), **extra_http)
         self.assertHttpCreated(response)
         self.assertTrue(response['Content-Type'].startswith('application/json'))
         self.assertValidJSON(force_text(response.content))
