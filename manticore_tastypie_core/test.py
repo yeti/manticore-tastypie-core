@@ -130,14 +130,28 @@ class ManticomResourceTestCase(ResourceTestCase):
         data = self.deserialize(response)
         self.assertKeys(data, self.schema_objects[response_object_name])
 
-    def assertPhotoUpload(self, url, obj_to_update, user, path_to_image):
+    def assertPhotoUpload(
+            self,
+            url,
+            obj_to_update,
+            user,
+            path_to_image,
+            related_media_model=None,
+            related_name=None,
+            extra_http=None
+    ):
         """
             Checks that the photo is uploaded, saved, and resized
+            If the model being 'updated' is not the model that actually stores files (e.g., there is a Media model that
+            has a relation to the model being updated), pass that model and the keyword field on that model that relates
+            to the model being updated
         """
         kwargs = {
             'HTTP_AUTHORIZATION': self.get_authentication(user),
             'data': {'picture': open(settings.PROJECT_ROOT + path_to_image, 'r')}
         }
+        if extra_http:
+            kwargs.update(extra_http)
         response = self.api_client.client.post("{}{}/upload_picture/{}/".format(settings.API_PREFIX,
                                                 url,
                                                 obj_to_update.pk),
@@ -149,9 +163,17 @@ class ManticomResourceTestCase(ResourceTestCase):
         self.assertValidJSON(force_text(response.content))
 
         # Check the photo is saved
-        obj_to_update = obj_to_update.__class__.objects.get(pk=obj_to_update.pk)
+        if related_media_model and related_name:
+            filters = {
+                related_name: obj_to_update
+            }
+            obj_to_update = related_media_model.objects.filter(**filters)[0]
+        else:
+            obj_to_update = obj_to_update.__class__.objects.get(pk=obj_to_update.pk)
+        original_file_field_name = getattr(obj_to_update, "_original_file", "original_file")
+        original_file = getattr(obj_to_update, original_file_field_name)
         self.assertEqual(
-            obj_to_update.original_photo.file.read(),
+            original_file.file.read(),
             open(settings.PROJECT_ROOT + path_to_image, 'r').read()
         )
 
@@ -160,3 +182,58 @@ class ManticomResourceTestCase(ResourceTestCase):
             w, h = get_image_dimensions(getattr(obj_to_update, size_field))
             self.assertEqual(size['height'], h)
             self.assertEqual(size['width'], w)
+
+    def assertVideoUpload(
+            self,
+            url,
+            obj_to_update,
+            user,
+            path_to_video,
+            path_to_thumbnail,
+            related_media_model=None,
+            related_name=None,
+            extra_http=None
+    ):
+        """
+            Checks that the video is uploaded and saved
+            If the model being 'updated' is not the model that actually stores files (e.g., there is a Media model that
+            has a relation to the model being updated), pass that model and the keyword field on that model that relates
+            to the model being updated
+        """
+        kwargs = {
+            'HTTP_AUTHORIZATION': self.get_authentication(user),
+            'data': {
+                'video': open(settings.PROJECT_ROOT + path_to_video, 'r'),
+                'video_thumbnail': open(settings.PROJECT_ROOT + path_to_thumbnail, 'r')
+            }
+        }
+        if extra_http:
+            kwargs.update(extra_http)
+        response = self.api_client.client.post("{}{}/upload_video/{}/".format(settings.API_PREFIX,
+                                                url,
+                                                obj_to_update.pk),
+                                               **kwargs
+        )
+
+        self.assertHttpAccepted(response)
+        self.assertTrue(response['Content-Type'].startswith('application/json'))
+        self.assertValidJSON(force_text(response.content))
+
+        # Check the video and thumbnail are saved
+        if related_media_model and related_name:
+            filters = {
+                related_name: obj_to_update
+            }
+            obj_to_update = related_media_model.objects.filter(**filters)[0]
+        else:
+            obj_to_update = obj_to_update.__class__.objects.get(pk=obj_to_update.pk)
+        original_file_field_name = getattr(obj_to_update, "_original_file", "original_file")
+        original_file = getattr(obj_to_update, original_file_field_name)
+        self.assertEqual(
+            original_file.file.read(),
+            open(settings.PROJECT_ROOT + path_to_video, 'r').read()
+        )
+        self.assertEqual(
+            obj_to_update.thumbnail.file.read(),
+            open(settings.PROJECT_ROOT + path_to_thumbnail, 'r').read()
+        )
