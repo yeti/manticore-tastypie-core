@@ -70,20 +70,24 @@ class ManticomResourceTestCase(ResourceTestCase):
         # The actual `data_object` contains no extraneous fields not found in the schema
         self.assertTrue(set(data_object).issubset(set(schema_fields)))
 
-    def assertManticomGETResponse(self, url, key_path, response_object_name, user, **kwargs):
+    def assertManticomGETResponse(self, url, key_path, response_object_name, user, unauthorized=False, **kwargs):
         """
             Takes a url, key path, and object name to run a GET request and
             check the results match the manticom schema
         """
         response = self.api_client.get("{}{}/".format(settings.API_PREFIX, url),
                                        authentication=self.get_authentication(user), **kwargs)
-        self.assertValidJSONResponse(response)
 
-        data = self.deserialize(response)[key_path]
-        if len(data) == 0:
-            raise self.failureException("No data to compare response")
+        if unauthorized:
+            self.assertHttpUnauthorized(response)
+        else:
+            self.assertValidJSONResponse(response)
 
-        self.check_schema_keys(data[0], self.schema_objects[response_object_name])
+            data = self.deserialize(response)[key_path]
+            if len(data) == 0:
+                raise self.failureException("No data to compare response")
+
+            self.check_schema_keys(data[0], self.schema_objects[response_object_name])
 
     def assertManticomPOSTResponse(
             self,
@@ -93,7 +97,8 @@ class ManticomResourceTestCase(ResourceTestCase):
             data,
             user,
             key_path=None,
-            extra_http=None
+            extra_http=None,
+            unauthorized=False
     ):
         """
             Runs a POST request and checks the POST data and results match the manticom schema
@@ -103,32 +108,49 @@ class ManticomResourceTestCase(ResourceTestCase):
             extra_http = {}
         response = self.api_client.post("{}{}/".format(settings.API_PREFIX, url), data=data,
                                         authentication=self.get_authentication(user), **extra_http)
-        self.assertHttpCreated(response)
-        self.assertTrue(response['Content-Type'].startswith('application/json'))
-        self.assertValidJSON(force_text(response.content))
 
-        data = self.deserialize(response)
-        if 'meta' in data:  # If the POST returns a tastypie list, process looking for the first item
-            data = data[key_path]
-            if len(data) == 0:
-                raise self.failureException("No data to compare response")
-            self.assertKeys(data[0], self.schema_objects[response_object_name])
+        if unauthorized:
+            self.assertHttpUnauthorized(response)
         else:
-            self.assertKeys(data, self.schema_objects[response_object_name])
+            self.assertHttpCreated(response)
+            self.assertTrue(response['Content-Type'].startswith('application/json'))
+            self.assertValidJSON(force_text(response.content))
 
-    def assertManticomPATCHResponse(self, url, request_object_name, response_object_name, data, user, **kwargs):
+            data = self.deserialize(response)
+            if 'meta' in data:  # If the POST returns a tastypie list, process looking for the first item
+                data = data[key_path]
+                if len(data) == 0:
+                    raise self.failureException("No data to compare response")
+                self.assertKeys(data[0], self.schema_objects[response_object_name])
+            else:
+                self.assertKeys(data, self.schema_objects[response_object_name])
+
+    def assertManticomPATCHResponse(
+            self,
+            url,
+            request_object_name,
+            response_object_name,
+            data,
+            user,
+            unauthorized=False,
+            **kwargs
+    ):
         """
             Runs a PATCH request and checks the PATCH data and results match the manticom schema
         """
         self.check_schema_keys(data, self.schema_objects[request_object_name])
         response = self.api_client.patch("{}{}/".format(settings.API_PREFIX, url), data=data,
                                          authentication=self.get_authentication(user), **kwargs)
-        self.assertHttpAccepted(response)
-        self.assertTrue(response['Content-Type'].startswith('application/json'))
-        self.assertValidJSON(force_text(response.content))
 
-        data = self.deserialize(response)
-        self.assertKeys(data, self.schema_objects[response_object_name])
+        if unauthorized:
+            self.assertHttpUnauthorized(response)
+        else:
+            self.assertHttpAccepted(response)
+            self.assertTrue(response['Content-Type'].startswith('application/json'))
+            self.assertValidJSON(force_text(response.content))
+
+            data = self.deserialize(response)
+            self.assertKeys(data, self.schema_objects[response_object_name])
 
     def assertPhotoUpload(
             self,
@@ -138,7 +160,8 @@ class ManticomResourceTestCase(ResourceTestCase):
             path_to_image,
             related_media_model=None,
             related_name=None,
-            extra_http=None
+            extra_http=None,
+            unauthorized=False
     ):
         """
             Checks that the photo is uploaded, saved, and resized
@@ -158,30 +181,33 @@ class ManticomResourceTestCase(ResourceTestCase):
                                                **kwargs
         )
 
-        self.assertHttpAccepted(response)
-        self.assertTrue(response['Content-Type'].startswith('application/json'))
-        self.assertValidJSON(force_text(response.content))
-
-        # Check the photo is saved
-        if related_media_model and related_name:
-            filters = {
-                related_name: obj_to_update
-            }
-            obj_to_update = related_media_model.objects.filter(**filters)[0]
+        if unauthorized:
+            self.assertHttpUnauthorized(response)
         else:
-            obj_to_update = obj_to_update.__class__.objects.get(pk=obj_to_update.pk)
-        original_file_field_name = getattr(obj_to_update, "original_file_name", "original_file")
-        original_file = getattr(obj_to_update, original_file_field_name)
-        self.assertEqual(
-            original_file.file.read(),
-            open(settings.PROJECT_ROOT + path_to_image, 'r').read()
-        )
+            self.assertHttpAccepted(response)
+            self.assertTrue(response['Content-Type'].startswith('application/json'))
+            self.assertValidJSON(force_text(response.content))
 
-        # Check the photo is correctly resized
-        for size_field, size in obj_to_update.__class__.SIZES.iteritems():
-            w, h = get_image_dimensions(getattr(obj_to_update, size_field))
-            self.assertEqual(size['height'], h)
-            self.assertEqual(size['width'], w)
+            # Check the photo is saved
+            if related_media_model and related_name:
+                filters = {
+                    related_name: obj_to_update
+                }
+                obj_to_update = related_media_model.objects.filter(**filters)[0]
+            else:
+                obj_to_update = obj_to_update.__class__.objects.get(pk=obj_to_update.pk)
+            original_file_field_name = getattr(obj_to_update, "original_file_name", "original_file")
+            original_file = getattr(obj_to_update, original_file_field_name)
+            self.assertEqual(
+                original_file.file.read(),
+                open(settings.PROJECT_ROOT + path_to_image, 'r').read()
+            )
+
+            # Check the photo is correctly resized
+            for size_field, size in obj_to_update.__class__.SIZES.iteritems():
+                w, h = get_image_dimensions(getattr(obj_to_update, size_field))
+                self.assertEqual(size['height'], h)
+                self.assertEqual(size['width'], w)
 
     def assertVideoUpload(
             self,
@@ -192,7 +218,8 @@ class ManticomResourceTestCase(ResourceTestCase):
             path_to_thumbnail,
             related_media_model=None,
             related_name=None,
-            extra_http=None
+            extra_http=None,
+            unauthorized=False
     ):
         """
             Checks that the video is uploaded and saved
@@ -215,25 +242,28 @@ class ManticomResourceTestCase(ResourceTestCase):
                                                **kwargs
         )
 
-        self.assertHttpAccepted(response)
-        self.assertTrue(response['Content-Type'].startswith('application/json'))
-        self.assertValidJSON(force_text(response.content))
-
-        # Check the video and thumbnail are saved
-        if related_media_model and related_name:
-            filters = {
-                related_name: obj_to_update
-            }
-            obj_to_update = related_media_model.objects.filter(**filters)[0]
+        if unauthorized:
+            self.assertHttpUnauthorized(response)
         else:
-            obj_to_update = obj_to_update.__class__.objects.get(pk=obj_to_update.pk)
-        original_file_field_name = getattr(obj_to_update, "original_file_name", "original_file")
-        original_file = getattr(obj_to_update, original_file_field_name)
-        self.assertEqual(
-            original_file.file.read(),
-            open(settings.PROJECT_ROOT + path_to_video, 'r').read()
-        )
-        self.assertEqual(
-            obj_to_update.thumbnail.file.read(),
-            open(settings.PROJECT_ROOT + path_to_thumbnail, 'r').read()
-        )
+            self.assertHttpAccepted(response)
+            self.assertTrue(response['Content-Type'].startswith('application/json'))
+            self.assertValidJSON(force_text(response.content))
+
+            # Check the video and thumbnail are saved
+            if related_media_model and related_name:
+                filters = {
+                    related_name: obj_to_update
+                }
+                obj_to_update = related_media_model.objects.filter(**filters)[0]
+            else:
+                obj_to_update = obj_to_update.__class__.objects.get(pk=obj_to_update.pk)
+            original_file_field_name = getattr(obj_to_update, "original_file_name", "original_file")
+            original_file = getattr(obj_to_update, original_file_field_name)
+            self.assertEqual(
+                original_file.file.read(),
+                open(settings.PROJECT_ROOT + path_to_video, 'r').read()
+            )
+            self.assertEqual(
+                obj_to_update.thumbnail.file.read(),
+                open(settings.PROJECT_ROOT + path_to_thumbnail, 'r').read()
+            )
