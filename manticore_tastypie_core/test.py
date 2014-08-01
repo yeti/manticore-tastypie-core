@@ -170,7 +170,7 @@ class ManticomResourceTestCase(ResourceTestCase):
             obj_to_update = related_media_model.objects.filter(**filters)[0]
         else:
             obj_to_update = obj_to_update.__class__.objects.get(pk=obj_to_update.pk)
-        original_file_field_name = getattr(obj_to_update, "_original_file", "original_file")
+        original_file_field_name = getattr(obj_to_update, "original_file_name", "original_file")
         original_file = getattr(obj_to_update, original_file_field_name)
         self.assertEqual(
             original_file.file.read(),
@@ -227,7 +227,7 @@ class ManticomResourceTestCase(ResourceTestCase):
             obj_to_update = related_media_model.objects.filter(**filters)[0]
         else:
             obj_to_update = obj_to_update.__class__.objects.get(pk=obj_to_update.pk)
-        original_file_field_name = getattr(obj_to_update, "_original_file", "original_file")
+        original_file_field_name = getattr(obj_to_update, "original_file_name", "original_file")
         original_file = getattr(obj_to_update, original_file_field_name)
         self.assertEqual(
             original_file.file.read(),

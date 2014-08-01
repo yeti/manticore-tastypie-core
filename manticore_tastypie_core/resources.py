@@ -142,7 +142,7 @@ class PictureVideoUploadResource(ManticoreModelResource):
 
         def save_image(obj, picture):
             self.save_media_type(obj, "image")
-            original_file_field_name = getattr(obj, "_original_file", "original_file")
+            original_file_field_name = getattr(obj, "original_file_name", "original_file")
             original_file = getattr(obj, original_file_field_name)
             original_file.save(picture.name, picture)
             obj.save(update_fields=[original_file_field_name])
@@ -166,7 +166,7 @@ class PictureVideoUploadResource(ManticoreModelResource):
 
         def save_video(obj, video):
             self.save_media_type(obj, "video")
-            original_file_field_name = getattr(obj, "_original_file", "original_file")
+            original_file_field_name = getattr(obj, "original_file_name", "original_file")
             original_file = getattr(obj, original_file_field_name)
             original_file.save(video.name, video)
             # Assumes there is a field called "thumbnail"
