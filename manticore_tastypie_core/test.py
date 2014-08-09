@@ -152,6 +152,15 @@ class ManticomResourceTestCase(ResourceTestCase):
             data = self.deserialize(response)
             self.assertKeys(data, self.schema_objects[response_object_name])
 
+    def assertManticomDELETEResponse(self, url, user, unauthorized=False, **kwargs):
+        response = self.api_client.delete("{}{}/".format(settings.API_PREFIX, url),
+                                       authentication=self.get_authentication(user), **kwargs)
+
+        if unauthorized:
+            self.assertHttpUnauthorized(response)
+        else:
+            self.assertHttpAccepted(response)
+
     def assertPhotoUpload(
             self,
             url,
