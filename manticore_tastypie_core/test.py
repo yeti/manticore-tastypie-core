@@ -89,6 +89,8 @@ class ManticomResourceTestCase(ResourceTestCase):
 
             self.check_schema_keys(data[0], self.schema_objects[response_object_name])
 
+        return response
+
     def assertManticomPOSTResponse(
             self,
             url,
@@ -125,6 +127,8 @@ class ManticomResourceTestCase(ResourceTestCase):
             else:
                 self.assertKeys(data, self.schema_objects[response_object_name])
 
+        return response
+
     def assertManticomPATCHResponse(
             self,
             url,
@@ -152,6 +156,8 @@ class ManticomResourceTestCase(ResourceTestCase):
             data = self.deserialize(response)
             self.assertKeys(data, self.schema_objects[response_object_name])
 
+        return response
+
     def assertManticomDELETEResponse(self, url, user, unauthorized=False, **kwargs):
         response = self.api_client.delete("{}{}/".format(settings.API_PREFIX, url),
                                        authentication=self.get_authentication(user), **kwargs)
@@ -160,6 +166,8 @@ class ManticomResourceTestCase(ResourceTestCase):
             self.assertHttpUnauthorized(response)
         else:
             self.assertHttpAccepted(response)
+
+        return response
 
     def assertPhotoUpload(
             self,
