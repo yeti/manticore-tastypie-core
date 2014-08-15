@@ -70,24 +70,39 @@ class ManticomResourceTestCase(ResourceTestCase):
         # The actual `data_object` contains no extraneous fields not found in the schema
         self.assertTrue(set(data_object).issubset(set(schema_fields)))
 
-    def assertManticomGETResponse(self, url, key_path, response_object_name, user, unauthorized=False, **kwargs):
+    def assertManticomGETResponse(
+            self,
+            url,
+            key_path,
+            response_object_name,
+            user,
+            unauthorized=False,
+            parameters=None,
+            extra_http=None
+    ):
         """
             Takes a url, key path, and object name to run a GET request and
             check the results match the manticom schema
         """
-        response = self.api_client.get("{}{}/".format(settings.API_PREFIX, url),
-                                       authentication=self.get_authentication(user), **kwargs)
+        if extra_http is None:
+            extra_http = {}
+        response = self.api_client.get("{}{}/".format(settings.API_PREFIX, url), data=parameters,
+                                       authentication=self.get_authentication(user), **extra_http)
 
         if unauthorized:
             self.assertHttpUnauthorized(response)
         else:
             self.assertValidJSONResponse(response)
 
-            data = self.deserialize(response)[key_path]
-            if len(data) == 0:
-                raise self.failureException("No data to compare response")
+            if key_path is None:
+                data = self.deserialize(response)
+            else:
+                data = self.deserialize(response)[key_path]
+                if len(data) == 0:
+                    raise self.failureException("No data to compare response")
+                data = data[0]
 
-            self.check_schema_keys(data[0], self.schema_objects[response_object_name])
+            self.check_schema_keys(data, self.schema_objects[response_object_name])
 
         return response
 
