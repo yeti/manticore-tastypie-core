@@ -107,12 +107,18 @@ class PictureVideoUploadResource(ManticoreModelResource):
         ]
 
     def get_object_from_pk(self, request, **kwargs):
+        """
+        If using a related media model, this method must be overwritten
+        """
         try:
             return self._meta.queryset._clone().get(pk=kwargs['pk'])
         except self._meta.object_class.DoesNotExist:
             return http.HttpNotFound()
 
     def check_authentication(self, request, bundle):
+        """
+        If using a related media model, this method must be overwritten
+        """
         self.method_check(request, allowed=['post'])
         self.is_authenticated(request)
         self.authorized_update_detail(None, bundle)
@@ -123,6 +129,9 @@ class PictureVideoUploadResource(ManticoreModelResource):
             obj.save()
 
     def return_bundle(self, request, bundle):
+        """
+        If using a related media model, this method must be overwritten
+        """
         bundle = self.full_dehydrate(bundle)
 
         def return_response(resource, request, bundle):
