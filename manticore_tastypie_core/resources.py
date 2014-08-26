@@ -80,7 +80,7 @@ class ManticoreModelResource(BaseModelResource):
             except FieldDoesNotExist:
                 pass
 
-        super(ManticoreModelResource, self).update_in_place(request, original_bundle, new_data)
+        return super(ManticoreModelResource, self).update_in_place(request, original_bundle, new_data)
 
 
 class ManticoreResource(Resource):

@@ -48,14 +48,15 @@ class ManticomResourceTestCase(ResourceTestCase):
                 required_fields.append(schema_field)
 
             if new_schema_object:
-                new_data_object = data_object[schema_field]
-                if new_data_object is None:
+                if schema_field not in data_object or data_object[schema_field] is None:
                     # If our new object to check is None and optional then continue, else raise an error
                     if is_optional:
                         continue
                     else:
                         raise self.failureException("No data for object {0}".format(new_schema_object))
-                elif is_list:
+
+                new_data_object = data_object[schema_field]
+                if is_list:
                     # If our new object to check is a list of these objects, continue if we don't have any daa
                     # Else grab the first one in the list
                     if len(new_data_object) == 0:
