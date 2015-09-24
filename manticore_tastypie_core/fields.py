@@ -17,7 +17,7 @@ class ToBareForeignKeyField(ToOneField):
 
         return super(ToBareForeignKeyField, self).build_related_resource(value, request, related_obj, related_name)
 
-    def dehydrate(self, bundle):
+    def dehydrate(self, bundle, for_list=True):
         field_id_name = "%s_id" % self.attribute
 
         if hasattr(bundle.obj, field_id_name):
