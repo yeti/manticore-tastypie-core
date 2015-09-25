@@ -2,7 +2,7 @@ from _ssl import SSLError
 from django.conf import settings
 from django.conf.urls import url
 from django.db import IntegrityError
-from googleplaces import GooglePlaces, ranking
+from googleplaces import GooglePlaces
 from tastypie import http, fields
 from tastypie.authentication import Authentication
 from tastypie.authorization import Authorization
